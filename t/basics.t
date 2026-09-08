@@ -190,4 +190,23 @@ $t->get_ok('/log/1')->status_is(200)
   ->content_type_is('text/plain;charset=UTF-8')
   ->content_like(qr/no-rpm-opt-flags/);
 
+# Served under a subdirectory by a reverse proxy
+my $pt = Test::Mojo->new(
+  'SUSE::BuildCheckStatistics' => {%$config, prefix => '/rpmlint'});
+$pt->app->ua->ioloop(Mojo::IOLoop->singleton);
+$pt->app->updater->silent(1)->update;
+$pt->app->packages->deploy;
+
+# Every generated url gets the prefix, but the proxy strips it again, so the
+# routes themselves are unchanged
+$pt->get_ok('/')->status_is(200)
+  ->element_exists('script[src=/rpmlint/jquery.js]')
+  ->element_exists('link[href=/rpmlint/site.css]')
+  ->element_exists('img[src=/rpmlint/opensuse-logo.png]')
+  ->element_exists('a[href=/rpmlint/rules/Foo/i586/Bar]')
+  ->element_exists('a[href=/rpmlint/Foo/i586/Bar]');
+$pt->get_ok('/Foo/i586/Bar')->status_is(200)
+  ->element_exists('a[href=/rpmlint/1]')
+  ->element_exists('a[href=/rpmlint/Foo/i586/Bar?format=txt]');
+
 done_testing;

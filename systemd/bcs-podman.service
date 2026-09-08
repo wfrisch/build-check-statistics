@@ -9,6 +9,7 @@ RestartSec=5
 ExecStartPre=-/usr/bin/podman rm -f bcs
 ExecStart=/usr/bin/podman run --rm --name bcs \
   -p 127.0.0.1:8080:8080 \
+  -e MOJO_REVERSE_PROXY=1 \
   -v /var/lib/build_check_statistics:/var/lib/build_check_statistics:Z \
   localhost/build-check-statistics
 ExecStop=/usr/bin/podman stop bcs

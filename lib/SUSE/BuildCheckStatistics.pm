@@ -67,6 +67,16 @@ sub startup {
   $self->sqlite->auto_migrate(1)->migrations->name('build_check_statistics')
     ->from_file($path);
 
+  # Served under a subdirectory by a reverse proxy that strips the prefix.
+  # Moving it into the base path is enough, because every URL in the
+  # templates is generated with url_for.
+  if (my $prefix = $config->{prefix}) {
+    my @parts = grep {length} split m!/!, $prefix;
+    $self->hook(before_dispatch => sub {
+      push @{shift->req->url->base->path->trailing_slash(1)}, @parts;
+    });
+  }
+
   # Controller
   my $r = $self->routes;
   $r->get('/rules/#project/#arch/#repo')->to('packages#rules')->name('rules');
