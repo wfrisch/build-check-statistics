@@ -87,3 +87,35 @@ $ BCS_CONFIG=/etc/build_check_statistics.conf BCS_DATA=/var/lib/build_check_stat
 
 The server publishes on `127.0.0.1:8080` only, which is what the reverse proxy
 in `apache2/build_check_statistics.conf` already expects.
+
+### Serving under a subdirectory
+
+To reverse proxy the application under a path such as
+`https://myserver/rpmlint/`, set `prefix` in the configuration.
+
+```
+{
+  obs      => 'https://build.opensuse.org/public',
+  projects => ['Virtualization'],
+  sqlite   => 'sqlite:/var/lib/build_check_statistics/rpmlint.db',
+  prefix   => '/rpmlint'
+}
+```
+
+Every URL in the templates is generated with `url_for`, including the static
+assets, so the prefix is applied to all of them. The routes themselves are
+unchanged, because apache2 strips the prefix again.
+
+```
+ProxyPass        /rpmlint/ http://localhost:8080/ keepalive=On
+ProxyPassReverse /rpmlint/ http://localhost:8080/
+RequestHeader set X-Forwarded-Proto "https"
+```
+
+Note the trailing slashes: `ProxyPass /rpmlint/` with a target of
+`http://localhost:8080/` is what removes the prefix from the request path.
+
+Mojolicious only trusts `X-Forwarded-Proto` when it knows it is behind a proxy,
+so set `MOJO_REVERSE_PROXY=1` as well (the systemd unit already does). Without
+it, anything the application generates as an absolute URL would come out as
+`http` on an `https` site.
