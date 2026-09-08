@@ -1,0 +1,10 @@
+[Unit]
+Description=Build Check Statistics update timer (podman)
+
+[Timer]
+OnCalendar=02:00:00
+Persistent=true
+Unit=bcs-podman-update.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Build Check Statistics web server (podman)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Restart=on-failure
+RestartSec=5
+ExecStartPre=-/usr/bin/podman rm -f bcs
+ExecStart=/usr/bin/podman run --rm --name bcs \
+  -p 127.0.0.1:8080:8080 \
+  -v /var/lib/build_check_statistics:/var/lib/build_check_statistics:Z \
+  localhost/build-check-statistics
+ExecStop=/usr/bin/podman stop bcs
+
+[Install]
+WantedBy=multi-user.target
