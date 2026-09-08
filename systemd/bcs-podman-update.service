@@ -1,13 +1,14 @@
 [Unit]
 Description=Build Check Statistics update (podman)
-Wants=network-online.target
-After=network-online.target
 
 [Service]
 Type=oneshot
+StateDirectory=build_check_statistics
 ExecStart=/usr/bin/podman run --rm --name bcs-update \
-  -v /var/lib/build_check_statistics:/var/lib/build_check_statistics:Z \
+  -v %E/build_check_statistics.conf:/app/build_check_statistics.conf:ro,z \
+  -v %S/build_check_statistics:/var/lib/build_check_statistics:z \
   localhost/build-check-statistics update -s
 ExecStart=/usr/bin/podman run --rm --name bcs-deploy \
-  -v /var/lib/build_check_statistics:/var/lib/build_check_statistics:Z \
+  -v %E/build_check_statistics.conf:/app/build_check_statistics.conf:ro,z \
+  -v %S/build_check_statistics:/var/lib/build_check_statistics:z \
   localhost/build-check-statistics deploy

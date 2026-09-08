@@ -1,18 +1,19 @@
 [Unit]
 Description=Build Check Statistics web server (podman)
-Wants=network-online.target
-After=network-online.target
 
 [Service]
 Restart=on-failure
 RestartSec=5
+# Creates and owns %S/build_check_statistics, so the database survives updates
+StateDirectory=build_check_statistics
 ExecStartPre=-/usr/bin/podman rm -f bcs
 ExecStart=/usr/bin/podman run --rm --name bcs \
   -p 127.0.0.1:8080:8080 \
   -e MOJO_REVERSE_PROXY=1 \
-  -v /var/lib/build_check_statistics:/var/lib/build_check_statistics:Z \
+  -v %E/build_check_statistics.conf:/app/build_check_statistics.conf:ro,z \
+  -v %S/build_check_statistics:/var/lib/build_check_statistics:z \
   localhost/build-check-statistics
 ExecStop=/usr/bin/podman stop bcs
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

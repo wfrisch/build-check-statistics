@@ -69,20 +69,35 @@ directory. To change `projects` or `obs`, copy
 `container/build_check_statistics.conf`, edit it, and point `BCS_CONFIG` at it.
 
 ```
-$ BCS_CONFIG=/etc/build_check_statistics.conf BCS_DATA=/var/lib/build_check_statistics ./container.sh web
+$ BCS_CONFIG=~/.config/build_check_statistics.conf ./container.sh web
 ```
 
 ### Deployment with systemd and apache2
 
 `systemd/bcs-podman.service` runs the web server, and
-`systemd/bcs-podman-update.timer` runs the scraper daily at 02:00. Both use
-`/var/lib/build_check_statistics` on the host for state.
+`systemd/bcs-podman-update.timer` runs the scraper daily at 02:00. They are
+systemd *user* units, for rootless podman.
+
+The configuration is read from `~/.config/build_check_statistics.conf`, which
+is bind-mounted over the one baked into the image. It has to exist, otherwise
+podman refuses to start the container. Note that the `sqlite` path in it is the
+path *inside* the container.
 
 ```
-# mkdir -p /var/lib/build_check_statistics
-# cp systemd/bcs-podman*.{service,timer} /etc/systemd/system/
-# systemctl daemon-reload
-# systemctl enable --now bcs-podman.service bcs-podman-update.timer
+$ cp container/build_check_statistics.conf ~/.config/build_check_statistics.conf
+$ $EDITOR ~/.config/build_check_statistics.conf
+$ cp systemd/bcs-podman*.{service,timer} ~/.config/systemd/user/
+$ systemctl --user daemon-reload
+$ systemctl --user enable --now bcs-podman.service bcs-podman-update.timer
+```
+
+`StateDirectory=` creates `~/.local/state/build_check_statistics` for the
+database, so there is nothing to set up by hand.
+
+To keep the units running while you are not logged in:
+
+```
+$ loginctl enable-linger $USER
 ```
 
 The server publishes on `127.0.0.1:8080` only, which is what the reverse proxy
