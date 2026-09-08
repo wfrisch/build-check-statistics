@@ -23,9 +23,11 @@ CONFIG="${BCS_CONFIG:-}"
 
 # The whole persistent state is this one directory. SQLite needs to create
 # -wal/-shm files next to the database, so mount the directory, not the file.
-mounts=(-v "${DATA}:/var/lib/build_check_statistics:Z")
+# Shared (:z) rather than private (:Z), because the web and update containers
+# mount the same directory and a private label would lock one of them out
+mounts=(-v "${DATA}:/var/lib/build_check_statistics:z")
 [ -n "$CONFIG" ] &&
-  mounts+=(-v "${CONFIG}:/app/build_check_statistics.conf:ro,Z")
+  mounts+=(-v "${CONFIG}:/app/build_check_statistics.conf:ro,z")
 
 build() {
   podman build --pull=newer -t "$IMAGE" -f "${thisdir}/Dockerfile" "${thisdir}"
